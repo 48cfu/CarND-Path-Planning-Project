@@ -21,10 +21,16 @@
 using std::string;
 using std::vector;
 
-void PathPlanner::init(size_t number_lanes, double width_lane, double speed_limit){
+void PathPlanner::init(const Map &map, size_t number_lanes, double width_lane, double speed_limit){
   if (!initialized()){
     this->number_lanes = number_lanes;
     this->width_lane = width_lane;
     this->speed_limit = speed_limit;
+    is_initialized = true;
+    this->map = map;
   }
+}
+
+void PathPlanner::set_location(const CarState & loc){
+  this->location = loc;
 }
