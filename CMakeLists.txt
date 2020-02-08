@@ -1,4 +1,4 @@
-project(Path_Planning)
+project(PATH_PLANNER)
 
 cmake_minimum_required (VERSION 3.5)
 
@@ -7,7 +7,10 @@ add_definitions(-std=c++11)
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 
-set(sources src/main.cpp)
+file(GLOB HEADERS src/*.h)
+file(GLOB HEADERS_HPP src/*.hpp)
+
+set(sources src/path_planner.cpp src/main.cpp ${HEADERS} ${HEADERS_HPP})
 
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
@@ -21,6 +24,6 @@ link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
 
-add_executable(path_planning ${sources})
+add_executable(path_planner ${sources})
 
-target_link_libraries(path_planning z ssl uv uWS)
+target_link_libraries(path_planner z ssl uv uWS)
