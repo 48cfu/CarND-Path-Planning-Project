@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <ctime>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
@@ -15,6 +17,7 @@ using std::string;
 using std::vector;
 
 int main() {
+  auto start = std::chrono::system_clock::now();
   uWS::Hub h;
 
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
@@ -55,12 +58,16 @@ int main() {
   PathPlanner pp;
 
   h.onMessage([&pp, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy]
+               &map_waypoints_dx,&map_waypoints_dy, &start]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    // std::cout << "elapsed time: " << elapsed_seconds.count() << "s" <<std::endl << std::flush;
+
     if (length && length > 2 && data[0] == '4' && data[1] == '2') {
 
       auto s = hasData(data);
@@ -127,8 +134,8 @@ int main() {
           pp.set_location(c_location);
 
           int closestWaypoint = NextWaypoint(c_location.x, c_location.y, c_location.yaw, pp.map.waypoints_x, pp.map.waypoints_y);
-          next_x_vals.push_back(pp.map.waypoints_x[closestWaypoint]);
-          next_y_vals.push_back(pp.map.waypoints_y[closestWaypoint]);
+          next_x_vals.push_back(pp.map.waypoints_x[closestWaypoint++]);
+          next_y_vals.push_back(pp.map.waypoints_y[closestWaypoint++]);
           std::cout << "(" << next_x_vals[0] << ", " << next_y_vals[0] << ")" << std::endl << std::flush;
 
           msgJson["next_x"] = next_x_vals;
