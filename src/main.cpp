@@ -136,11 +136,11 @@ int main() {
           }
 
           pp.set_location(car_location);
-          vector<vector<double>> next_xy = pp.keep_lane(car_location, previous_path);
+          vector<vector<double>> next_xy = pp.keep_lane(car_location, previous_path, sensor_fusion);
           next_x_vals = next_xy[0];
           next_y_vals = next_xy[1];
           //std::cout << "size next_y_val = " << next_y_vals.size() << std::endl << std::flush;
-          std::cout << "(" << next_x_vals[0] << ", " << next_y_vals[0] << ")" << std::endl << std::flush;
+          //std::cout << "(" << next_x_vals[0] << ", " << next_y_vals[0] << ")" << std::endl << std::flush;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;

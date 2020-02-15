@@ -69,7 +69,7 @@ class PathPlanner {
   /**
    * Keep lane
    */
-  vector<vector<double>> keep_lane(const CarState & car_location, const Path & previous_path);
+  vector<vector<double>> keep_lane(const CarState & car_location, const Path & previous_path, vector<vector<double>> sensor_fusion);
   
   /**
    * In Frenet add X meters to car's current location

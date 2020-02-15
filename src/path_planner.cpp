@@ -30,7 +30,7 @@ void PathPlanner::init(size_t current_lane, const Map &map, size_t number_lanes,
     is_initialized = true;
     this->map = map;
     this->current_lane = current_lane;
-    this->ref_velocity = 49.5;
+    this->ref_velocity = 0;
   }
 }
 
@@ -38,12 +38,45 @@ void PathPlanner::set_location(const CarState & car_location){
   this->car_location = car_location;
 }
 
-vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const Path & previous_path){
+vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const Path & previous_path, vector<vector<double>>  sensor_fusion){
   set_location(location);
 
   int prev_size = previous_path.x.size();
 
-  //something here
+  if (prev_size > 0) {
+    car_location.s = previous_path.s;
+  }
+
+  bool too_close = false;
+  double check_speed = 0;
+  // find reference velocity to use
+  for (size_t i = 0; i < sensor_fusion.size(); i++) {
+    // car is in my lane
+    double d = sensor_fusion[i][6];
+    if ((2 + 4*current_lane - 2) < d  && d < (2 + 4*current_lane + 2)) {
+      double vx = sensor_fusion[i][3];
+      double vy = sensor_fusion[i][4];
+      check_speed = sqrt(vx * vx + vy * vy);
+      double check_car_s = sensor_fusion[i][5];
+
+      // if using previous points can project s  value out
+      check_car_s += ((double) prev_size * .02 * check_speed);
+
+      // check s values greater than mine and s gap
+      if (car_location.s < check_car_s && check_car_s < 30 + car_location.s) {
+        too_close = true;
+        break;
+      }
+    }
+  }
+
+  if (too_close) {
+    ref_velocity = std::max(ref_velocity - 0.224, mps2MPH(check_speed));
+    //std::cout << "vel = " << check_speed << std::endl << std::flush;
+  } else {
+    ref_velocity = std::min(ref_velocity + 0.224, speed_limit - 0.5);
+  }
+
   // create a list of widely spread (x,y) waypoints, evenly spaced at 30m
   vector<double> ptsx;
   vector<double> ptsy;
