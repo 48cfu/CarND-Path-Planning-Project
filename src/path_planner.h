@@ -57,7 +57,7 @@ class PathPlanner {
    * Set the current location of the car given by localization module (external)
    * @param loc The location (and velocity)
    */
-  void set_location(const CarState & loc);
+  void set_location(const CarState & car_location);
 
   /**
    * initialized Returns whether particle filter is initialized yet or not.
@@ -66,7 +66,17 @@ class PathPlanner {
     return is_initialized;
   }
 
-  vector<vector<double>> keep_lane(const Path & previous_path);
+  /**
+   * Keep lane
+   */
+  vector<vector<double>> keep_lane(const CarState & car_location, const Path & previous_path);
+  
+  /**
+   * In Frenet add X meters to car's current location
+   */
+  vector<double> addXFrenet(double X){
+    return getXY(car_location.s + X, 2 + 4 * current_lane, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+  }
 
   Map map;
  private:
@@ -75,8 +85,8 @@ class PathPlanner {
   size_t number_lanes;
   double width_lane;
   double speed_limit;
-  CarState location;
-  size_t current_lane;
+  CarState car_location;
+  int current_lane;
   double ref_velocity;
 };
 

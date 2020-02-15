@@ -53,10 +53,8 @@ int main() {
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
   }
-
   //Create path planner
   PathPlanner pp;
-
   h.onMessage([&pp, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy, &start]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -87,13 +85,13 @@ int main() {
           double car_d = j[1]["d"];
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
-          CarState c_location;
-          c_location.x = car_x;
-          c_location.y = car_y;
-          c_location.s = car_s;
-          c_location.d = car_d;
-          c_location.yaw = car_yaw;
-          c_location.speed = car_speed;
+          CarState car_location;
+          car_location.x = car_x;
+          car_location.y = car_y;
+          car_location.s = car_s;
+          car_location.d = car_d;
+          car_location.yaw = car_yaw;
+          car_location.speed = car_speed;
 
 
           // Previous path data given to the Planner
@@ -117,7 +115,6 @@ int main() {
 
           vector<double> next_x_vals;
           vector<double> next_y_vals;
-
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
@@ -138,13 +135,12 @@ int main() {
 
           }
 
-          pp.set_location(c_location);
-          pp.keep_lane(previous_path);
-
-          int closestWaypoint = NextWaypoint(c_location.x, c_location.y, c_location.yaw, pp.map.waypoints_x, pp.map.waypoints_y);
-          next_x_vals.push_back(pp.map.waypoints_x[closestWaypoint++]);
-          next_y_vals.push_back(pp.map.waypoints_y[closestWaypoint++]);
-          std::cout << "(" << next_x_vals[0] << ", " << next_y_vals[0] << ")" << std::endl << std::flush;
+          pp.set_location(car_location);
+          vector<vector<double>> next_xy = pp.keep_lane(car_location, previous_path);
+          next_x_vals = next_xy[0];
+          next_y_vals = next_xy[1];
+          std::cout << "size next_y_val = " << next_y_vals.size() << std::endl << std::flush;
+          //std::cout << "(" << next_x_vals[0] << ", " << next_y_vals[0] << ")" << std::endl << std::flush;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;

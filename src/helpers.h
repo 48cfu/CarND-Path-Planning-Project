@@ -33,7 +33,7 @@ inline string hasData(string s) {
 inline constexpr double pi() { return M_PI; }
 inline double deg2rad(double x) { return x * pi() / 180; }
 inline double rad2deg(double x) { return x * 180 / pi(); }
-inline constexpr double mph2() { return 2.24; }
+inline constexpr double MPH2mps(double velocity_in_miles_per_hour) { return velocity_in_miles_per_hour/2.24; }
 
 // Calculate distance between two points
 inline double distance(double x1, double y1, double x2, double y2) {
