@@ -97,11 +97,17 @@ int main() {
 
 
           // Previous path data given to the Planner
-          auto previous_path_x = j[1]["previous_path_x"];
-          auto previous_path_y = j[1]["previous_path_y"];
+          vector<double>  previous_path_x = j[1]["previous_path_x"];
+          vector<double>  previous_path_y = j[1]["previous_path_y"];
           // Previous path's end s and d values 
           double end_path_s = j[1]["end_path_s"];
           double end_path_d = j[1]["end_path_d"];
+
+          Path previous_path;
+          previous_path.x = previous_path_x;
+          previous_path.y = previous_path_y;
+          previous_path.s = end_path_s;
+          previous_path.d = end_path_d;
 
           // Sensor Fusion Data, a list of all other cars on the same side 
           //   of the road.
@@ -118,6 +124,7 @@ int main() {
            */
           if (!pp.initialized()) {
             size_t number_of_lanes = 3;
+            size_t current_lane = 1;
             double lane_width = 4; //[m]
             double speed_limit = 50; // [mph]
             Map map;
@@ -127,11 +134,12 @@ int main() {
             map.waypoints_dx = map_waypoints_dx;
             map.waypoints_dy = map_waypoints_dy;
 
-            pp.init(map, number_of_lanes, lane_width, speed_limit);
+            pp.init(current_lane, map, number_of_lanes, lane_width, speed_limit);
 
           }
 
           pp.set_location(c_location);
+          pp.keep_lane(previous_path);
 
           int closestWaypoint = NextWaypoint(c_location.x, c_location.y, c_location.yaw, pp.map.waypoints_x, pp.map.waypoints_y);
           next_x_vals.push_back(pp.map.waypoints_x[closestWaypoint++]);

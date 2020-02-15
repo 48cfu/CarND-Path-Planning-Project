@@ -22,8 +22,8 @@ struct CarState {
 };
 
 struct Path {
-  double x;
-  double y;
+  vector<double> x;
+  vector<double> y;
   double d;
   double s;
 };
@@ -51,7 +51,7 @@ class PathPlanner {
    * @param width_lane width of each lane [m]
    * @param speed_limit speed_limit of the road [mph]
    */
-  void init(const Map &map, size_t number_lanes, double width_lane, double speed_limit);
+  void init(size_t current_lane, const Map &map, size_t number_lanes, double width_lane, double speed_limit);
 
   /**
    * Set the current location of the car given by localization module (external)
@@ -66,6 +66,7 @@ class PathPlanner {
     return is_initialized;
   }
 
+  vector<vector<double>> keep_lane(const Path & previous_path);
 
   Map map;
  private:
@@ -75,6 +76,8 @@ class PathPlanner {
   double width_lane;
   double speed_limit;
   CarState location;
+  size_t current_lane;
+  double ref_velocity;
 };
 
 #endif  // PATH_PLANNER_H_
