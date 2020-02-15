@@ -121,7 +121,7 @@ int main() {
            */
           if (!pp.initialized()) {
             size_t number_of_lanes = 3;
-            size_t current_lane = 1;
+            int current_lane = 1;
             double lane_width = 4; //[m]
             double speed_limit = 50; // [mph]
             Map map;
@@ -139,8 +139,8 @@ int main() {
           vector<vector<double>> next_xy = pp.keep_lane(car_location, previous_path);
           next_x_vals = next_xy[0];
           next_y_vals = next_xy[1];
-          std::cout << "size next_y_val = " << next_y_vals.size() << std::endl << std::flush;
-          //std::cout << "(" << next_x_vals[0] << ", " << next_y_vals[0] << ")" << std::endl << std::flush;
+          //std::cout << "size next_y_val = " << next_y_vals.size() << std::endl << std::flush;
+          std::cout << "(" << next_x_vals[0] << ", " << next_y_vals[0] << ")" << std::endl << std::flush;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;

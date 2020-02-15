@@ -57,10 +57,10 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
   // car_location as a starting reference
   if (prev_size < 2) {
     // use 2 points that make the path tangent ot the car
-    ptsx.push_back(car_location.x - cos(car_location.yaw));
+    ptsx.push_back(car_location.x - std::cos(car_location.yaw));
     ptsx.push_back(car_location.x);
 
-    ptsy.push_back(car_location.y - sin(car_location.yaw));
+    ptsy.push_back(car_location.y - std::sin(car_location.yaw));
     ptsy.push_back(car_location.y);
   } else {
     // use the previous ptaht's end point as starting reference
@@ -70,7 +70,7 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     double ref_x_prev = previous_path.x[prev_size - 2];
     double ref_y_prev = previous_path.y[prev_size - 2];
 
-    ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
+    ref_yaw = std::atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
 
     // use 2 points that make the path tangent ot the car
     ptsx.push_back(ref_x_prev);
@@ -81,9 +81,9 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     
   }
   // In Frenet add  evenly 30m spaced points  ahead of the starting reference
-  vector<double> next_wp0 = addXFrenet(30);
-  vector<double> next_wp1 = addXFrenet(60);
-  vector<double> next_wp2 = addXFrenet(90);
+  vector<double> next_wp0 = addXFrenet(30.0);
+  vector<double> next_wp1 = addXFrenet(60.0);
+  vector<double> next_wp2 = addXFrenet(90.0);
 
   ptsx.push_back(next_wp0[0]);
   ptsy.push_back(next_wp0[1]);
@@ -100,14 +100,15 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     double shitf_x = ptsx[i] - ref_x;
     double shitf_y = ptsy[i] - ref_y;
 
-    ptsx[i] = shitf_x * cos(0 - ref_yaw) - shitf_y * sin(0 - ref_yaw);
-    ptsy[i] = shitf_x * sin(0 - ref_yaw) + shitf_y * cos(0 - ref_yaw);
+    ptsx[i] = shitf_x * std::cos(0 - ref_yaw) - shitf_y * std::sin(0 - ref_yaw);
+    ptsy[i] = shitf_x * std::sin(0 - ref_yaw) + shitf_y * std::cos(0 - ref_yaw);
   }
   // create a spline
   tk::spline spline;
   // set (x, y) points of the spline
   spline.set_points(ptsx, ptsy);
 
+  // define the actual (x, y) we will use for the planner
   vector<double> next_x_vals;
   vector<double> next_y_vals;
 
@@ -118,9 +119,9 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
   }
 
   // Calculate how to break up  spline points so that we travel at the desired reference velocity
-  double target_x = 30;
+  double target_x = 30.0;
   double target_y = spline(target_x);
-  double target_dist = sqrt(target_x * target_x + target_y * target_y);
+  double target_dist = std::sqrt(target_x * target_x + target_y * target_y);
 
   double x_add_on = 0;
 
@@ -138,16 +139,16 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     double y_ref = y_point;
 
     // Trasformation to map coordinate
-    x_point = x_ref * cos(ref_yaw) - y_ref * sin(ref_yaw);
-    y_point = x_ref * sin(ref_yaw) + y_ref * sin(ref_yaw);
+    x_point = x_ref * std::cos(ref_yaw) - y_ref * std::sin(ref_yaw);
+    y_point = x_ref * std::sin(ref_yaw) + y_ref * std::cos(ref_yaw);
 
-    x_point += x_ref;
-    y_point += y_ref;
+    x_point += ref_x;
+    y_point += ref_y;
 
     next_x_vals.push_back(x_point);
     next_y_vals.push_back(y_point);
   }
-  std::cout << "size next_x_vay = " << next_x_vals.size() << std::endl << std::flush;
+  //std::cout << "size next_x_vay = " << next_x_vals.size() << std::endl << std::flush;
   vector<vector<double>> next_xy;
   next_xy.push_back(next_x_vals);
   next_xy.push_back(next_y_vals);
