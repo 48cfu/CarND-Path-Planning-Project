@@ -18,6 +18,11 @@
 
 #include "helpers.h"
 #include "spline.h"
+#include "Eigen-3.3/Eigen/Dense"
+
+using std::vector;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 using std::string;
 using std::vector;
@@ -30,7 +35,9 @@ void PathPlanner::init(size_t current_lane, const Map &map, size_t number_lanes,
     is_initialized = true;
     this->map = map;
     this->current_lane = current_lane;
-    this->ref_velocity = 0;
+    this->ref_velocity = 2;
+    this->max_velocity_acceleration = 2.0 * 0.224; //about 10 m/s in velocity
+    this->safety_distance = 30.0;
   }
 }
 
@@ -63,7 +70,7 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
       check_car_s += ((double) prev_size * .02 * check_speed);
 
       // check s values greater than mine and s gap
-      if (car_location.s < check_car_s && check_car_s < 30 + car_location.s) {
+      if (car_location.s < check_car_s && check_car_s < this->safety_distance + car_location.s) {
         too_close = true;
         break;
       }
@@ -71,10 +78,11 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
   }
 
   if (too_close) {
-    ref_velocity = std::max(ref_velocity - 0.224, mps2MPH(check_speed));
+    ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, mps2MPH(check_speed));
     //std::cout << "vel = " << check_speed << std::endl << std::flush;
+    // do lane change
   } else {
-    ref_velocity = std::min(ref_velocity + 0.224, speed_limit - 0.2);
+    ref_velocity = std::min(ref_velocity + this->max_velocity_acceleration, speed_limit - 0.2);
   }
 
   // create a list of widely spread (x,y) waypoints, evenly spaced at 30m
@@ -187,4 +195,49 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
   next_xy.push_back(next_y_vals);
 
   return next_xy;
+}
+
+/**
+   * Calculates the Jerk Minimizing Trajectory that connects the initial state
+   * to the final state in time T.
+   *
+   * @param start - the vehicles start location given as a length three array
+   *   corresponding to initial values of [s, s_dot, s_double_dot]
+   * @param end - the desired end state for vehicle. Like "start" this is a
+   *   length three array.
+   * @param T - The duration, in seconds, over which this maneuver should occur.
+   *
+   * @output an array of length 6, each value corresponding to a coefficent in 
+   *   the polynomial:
+   *   s(t) = a_0 + a_1 * t + a_2 * t**2 + a_3 * t**3 + a_4 * t**4 + a_5 * t**5
+   *
+   * EXAMPLE
+   *   > JMT([0, 10, 0], [10, 10, 0], 1)
+   *     [0.0, 10.0, 0.0, 0.0, 0.0, 0.0]
+   */
+vector<double> PathPlanner::JMT(vector<double> &start, vector<double> &end, double T) {
+   double si = start[0];
+   double dot_si = start[1];
+   double ddot_si = start[2];
+   
+   double sf = end[0];
+   double dot_sf = end[1];
+   double ddot_sf = end[2];
+   
+    MatrixXd T_matrix = MatrixXd(3, 3);
+    T_matrix <<   pow(T, 3), pow(T, 4), pow(T, 5),
+                  3*pow(T, 2), 4*pow(T, 3), 5*pow(T, 4),
+                  6*pow(T, 1), 12*pow(T, 2), 20*pow(T, 3);
+    VectorXd s_vector = VectorXd(3);
+    s_vector <<   sf - (si + dot_si*T + 0.5*ddot_si * T * T),
+                  dot_sf - (dot_si + ddot_si * T),
+                  ddot_sf - ddot_si;
+
+    double a0 = si;
+    double a1 = dot_si;
+    double a2 = 0.5 * ddot_si;
+
+    VectorXd a345 = T_matrix.inverse() * s_vector;
+    
+  return {a0, a1, a2, a345[0], a345[1], a345[2]};
 }
