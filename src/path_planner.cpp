@@ -36,7 +36,7 @@ void PathPlanner::init(size_t current_lane, const Map &map, size_t number_lanes,
     this->map = map;
     this->current_lane = current_lane;
     this->ref_velocity = 2;
-    this->max_velocity_acceleration = 2.0 * 0.224; //about 10 m/s in velocity
+    this->max_velocity_acceleration = 1.8 * 0.224; //about 10 m/s in velocity
     this->safety_distance = 30.0;
   }
 }
@@ -56,6 +56,7 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
 
   bool too_close = false;
   double check_speed = 0;
+  double check_car_s = 0;
   // find reference velocity to use
   for (size_t i = 0; i < sensor_fusion.size(); i++) {
     // car is in my lane
@@ -64,7 +65,7 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
       double vx = sensor_fusion[i][3];
       double vy = sensor_fusion[i][4];
       check_speed = sqrt(vx * vx + vy * vy);
-      double check_car_s = sensor_fusion[i][5];
+      check_car_s = sensor_fusion[i][5];
 
       // if using previous points can project s  value out
       check_car_s += ((double) prev_size * .02 * check_speed);
@@ -74,17 +75,27 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
         too_close = true;
         break;
       }
-    }
+    } /*else if (car is changing to my lane) {
+      too_close = true;
+    }*/
   }
-
+  bool previous_too_close = false;
   if (too_close) {
-    ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, mps2MPH(check_speed));
+    if (previous_too_close){
+      // continue descreasing until safety distance is met.
+      // this because someone might have done a dangerous manoveur, and 
+      // they are now in front of us
+      ref_velocity = std::min(ref_velocity - this->max_velocity_acceleration, 5.0);
+    } else {
+      ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, mps2MPH(check_speed));
+    }
     //std::cout << "vel = " << check_speed << std::endl << std::flush;
     // do lane change
   } else {
     ref_velocity = std::min(ref_velocity + this->max_velocity_acceleration, speed_limit - 0.2);
   }
 
+  previous_too_close = too_close;
   // create a list of widely spread (x,y) waypoints, evenly spaced at 30m
   vector<double> ptsx;
   vector<double> ptsy;
