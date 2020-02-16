@@ -74,7 +74,7 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     ref_velocity = std::max(ref_velocity - 0.224, mps2MPH(check_speed));
     //std::cout << "vel = " << check_speed << std::endl << std::flush;
   } else {
-    ref_velocity = std::min(ref_velocity + 0.224, speed_limit - 0.5);
+    ref_velocity = std::min(ref_velocity + 0.224, speed_limit - 0.2);
   }
 
   // create a list of widely spread (x,y) waypoints, evenly spaced at 30m
