@@ -35,7 +35,7 @@ void PathPlanner::init(size_t current_lane, const Map &map, size_t number_lanes,
     is_initialized = true;
     this->map = map;
     this->current_lane = current_lane;
-    this->ref_velocity = 2;
+    this->ref_velocity = 4;
     this->max_velocity_acceleration = 1.8 * 0.224; //about 10 m/s in velocity
     this->safety_distance = 30.0;
   }
@@ -79,23 +79,22 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
       too_close = true;
     }*/
   }
-  bool previous_too_close = false;
+
   if (too_close) {
-    if (previous_too_close){
+    //if (check_car_s < this->safety_distance + car_location.s - 2) {
       // continue descreasing until safety distance is met.
       // this because someone might have done a dangerous manoveur, and 
       // they are now in front of us
-      ref_velocity = std::min(ref_velocity - this->max_velocity_acceleration, 5.0);
-    } else {
+      //ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, 5.0);
+    //} else {
       ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, mps2MPH(check_speed));
-    }
+    //}
     //std::cout << "vel = " << check_speed << std::endl << std::flush;
     // do lane change
   } else {
     ref_velocity = std::min(ref_velocity + this->max_velocity_acceleration, speed_limit - 0.2);
   }
 
-  previous_too_close = too_close;
   // create a list of widely spread (x,y) waypoints, evenly spaced at 30m
   vector<double> ptsx;
   vector<double> ptsy;
