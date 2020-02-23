@@ -78,6 +78,8 @@ class PathPlanner {
     return getXY(car_location.s + X, 2 + 4 * current_lane, map.waypoints_s, map.waypoints_x, map.waypoints_y);
   }
 
+  vector<double> predict_car_position(vector<double> vehicle, double time);
+  int proposed_new_lane(int current_lane, vector<vector<double>>  sensor_fusion);
   /**
    * Calculate the Jerk Minimizing Trajectory that connects the initial state
    * to the final state in time T.
@@ -93,12 +95,19 @@ class PathPlanner {
    *   s(t) = a_0 + a_1 * t + a_2 * t**2 + a_3 * t**3 + a_4 * t**4 + a_5 * t**5
    */
   vector<double> JMT(vector<double> &start, vector<double> &end, double T);
+  
+  /**
+   * Provides the possible next states given the current state for the FSM 
+   * discussed in the course, with the exception that lane changes happen 
+   * instantaneously, so LCL and LCR can only transition back to KL.
+   */
+  vector<string> successor_states();
 
   Map map;
  private:
   // Flag, if filter is initialized
   bool is_initialized;
-  size_t number_lanes;
+  int number_lanes;
   double width_lane;
   double speed_limit;
   CarState car_location;
@@ -106,6 +115,7 @@ class PathPlanner {
   double ref_velocity;
   double max_velocity_acceleration;
   double safety_distance;
+  string state; //state of the finite state machine
 };
 
 #endif  // PATH_PLANNER_H_

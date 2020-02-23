@@ -40,7 +40,14 @@ inline constexpr double mps2MPH(double velocity_in_meters_per_second) { return v
 inline double distance(double x1, double y1, double x2, double y2) {
   return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }
-
+inline int get_lane_number(double d, double lane_width){
+  if (d <= lane_width)
+    return 0;
+  else if (d <= 2* lane_width)
+    return 1;
+  else
+    return 2;
+}
 // Calculate closest waypoint to current x, y position
 inline int ClosestWaypoint(double x, double y, const vector<double> &maps_x, 
                     const vector<double> &maps_y) {

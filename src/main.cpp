@@ -121,7 +121,7 @@ int main() {
            */
           if (!pp.initialized()) {
             size_t number_of_lanes = 3;
-            int current_lane = 1;
+            int current_lane = 2;
             double lane_width = 4; //[m]
             double speed_limit = 50; // [mph]
             Map map;

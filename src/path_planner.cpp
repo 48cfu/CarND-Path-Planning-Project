@@ -36,15 +36,65 @@ void PathPlanner::init(size_t current_lane, const Map &map, size_t number_lanes,
     this->map = map;
     this->current_lane = current_lane;
     this->ref_velocity = 4;
-    this->max_velocity_acceleration = 1.8 * 0.224; //about 10 m/s in velocity
+    this->max_velocity_acceleration = 1.5 * 0.224; //about 10 m/s in velocity
     this->safety_distance = 30.0;
+    this->state = "KL";
   }
 }
 
 void PathPlanner::set_location(const CarState & car_location){
   this->car_location = car_location;
 }
+vector<double> PathPlanner::predict_car_position(vector<double> vehicle, double time){
+  double x0 = vehicle[1];
+  double y0 = vehicle[2];
+  double vx = vehicle[3];
+  double vy = vehicle[4];
+  
+  
+  double xf = x0 + vx * time;
+  double yf = y0 + vy * time;
+  double theta = std::fmod(atan2(vy, vx), pi());
+  vector<double> sf_df = getFrenet(xf, yf, theta,this->map.waypoints_x, this->map.waypoints_y);
 
+  vector<double> prediction{xf, yf, sf_df[0], sf_df[1]};
+  return prediction;
+}
+
+int PathPlanner::proposed_new_lane(int current_lane, vector<vector<double>>  sensor_fusion){
+  int best_lane = current_lane;
+  double current_lane_speed = ref_velocity;
+  vector<bool> lane_occupied = {false, false, false};
+  lane_occupied[current_lane] = true;
+
+  for (size_t i = 0; i < sensor_fusion.size(); i++) {
+    
+    double vx = sensor_fusion[i][3];
+    double vy = sensor_fusion[i][4];
+    double s = sensor_fusion[i][5];
+    double d = sensor_fusion[i][6];
+    double check_speed = sqrt(vx * vx + vy * vy);
+    vector<double> xf_yf_sf_df_prediction = predict_car_position(sensor_fusion[i], 1);
+    int lane_number = get_lane_number(d, this->width_lane);
+
+    if (std::abs(lane_number - current_lane) == 1) {
+      lane_occupied[lane_number] = true;
+      //change only if road is clear
+      if (std::abs(xf_yf_sf_df_prediction[2] - car_location.s) > 30) {
+        //there enough space for change
+        best_lane = lane_number;
+      }
+    }
+  }
+  if (lane_occupied[0] == false)
+    return 0;
+  else if (lane_occupied[1] == false)
+    return 1;
+  else if (lane_occupied[2] == false)
+    return 2;
+  else 
+    return best_lane;
+}
 vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const Path & previous_path, vector<vector<double>>  sensor_fusion){
   set_location(location);
 
@@ -60,7 +110,9 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
   // find reference velocity to use
   for (size_t i = 0; i < sensor_fusion.size(); i++) {
     // car is in my lane
+    vector<double> xf_yf_sf_df_prediction = predict_car_position(sensor_fusion[i], 1);
     double d = sensor_fusion[i][6];
+    double df = xf_yf_sf_df_prediction[3];
     if ((2 + 4*current_lane - 2) < d  && d < (2 + 4*current_lane + 2)) {
       double vx = sensor_fusion[i][3];
       double vy = sensor_fusion[i][4];
@@ -75,22 +127,21 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
         too_close = true;
         break;
       }
-    } /*else if (car is changing to my lane) {
-      too_close = true;
-    }*/
+    } else if ((2 + 4*current_lane - 2) < df  && df < (2 + 4*current_lane + 2)){
+        // car is changing to my lane
+        too_close = true;
+        break;
+    }
   }
 
   if (too_close) {
-    //if (check_car_s < this->safety_distance + car_location.s - 2) {
-      // continue descreasing until safety distance is met.
-      // this because someone might have done a dangerous manoveur, and 
-      // they are now in front of us
-      //ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, 5.0);
-    //} else {
       ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, mps2MPH(check_speed));
-    //}
-    //std::cout << "vel = " << check_speed << std::endl << std::flush;
     // do lane change
+    if (std::abs(ref_velocity - mps2MPH(check_speed)) < 1){
+      // consider changing lane
+      current_lane = proposed_new_lane(current_lane, sensor_fusion);
+      //current_lane = new_lane;
+    }
   } else {
     ref_velocity = std::min(ref_velocity + this->max_velocity_acceleration, speed_limit - 0.2);
   }
@@ -250,4 +301,31 @@ vector<double> PathPlanner::JMT(vector<double> &start, vector<double> &end, doub
     VectorXd a345 = T_matrix.inverse() * s_vector;
     
   return {a0, a1, a2, a345[0], a345[1], a345[2]};
+}
+
+/**
+   * Provides the possible next states given the current state for the FSM 
+   * discussed in the course, with the exception that lane changes happen 
+   * instantaneously, so LCL and LCR can only transition back to KL.
+   */
+vector<string> PathPlanner::successor_states() {
+  vector<string> states;
+  states.push_back("KL");
+  string state = this->state;
+  if(state.compare("KL") == 0) {
+    states.push_back("PLCL");
+    states.push_back("PLCR");
+  } else if (state.compare("PLCL") == 0) {
+    if (current_lane != number_lanes - 1) {
+      states.push_back("PLCL");
+      states.push_back("LCL");
+    }
+  } else if (state.compare("PLCR") == 0) {
+    if (current_lane != 0) {
+      states.push_back("PLCR");
+      states.push_back("LCR");
+    }
+  }
+  // If state is "LCL" or "LCR", then just return "KL"
+  return states;
 }
