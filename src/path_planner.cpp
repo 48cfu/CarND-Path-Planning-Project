@@ -113,12 +113,12 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     vector<double> xf_yf_sf_df_prediction = predict_car_position(sensor_fusion[i], 1);
     double d = sensor_fusion[i][6];
     double df = xf_yf_sf_df_prediction[3];
-    if ((2 + 4*current_lane - 2) < d  && d < (2 + 4*current_lane + 2)) {
-      double vx = sensor_fusion[i][3];
-      double vy = sensor_fusion[i][4];
-      check_speed = sqrt(vx * vx + vy * vy);
-      check_car_s = sensor_fusion[i][5];
+    double vx = sensor_fusion[i][3];
+    double vy = sensor_fusion[i][4];
+    check_speed = sqrt(vx * vx + vy * vy);
+    check_car_s = sensor_fusion[i][5];
 
+    if ((2 + 4*current_lane - 2) < d  && d < (2 + 4*current_lane + 2)) {
       // if using previous points can project s  value out
       check_car_s += ((double) prev_size * .02 * check_speed);
 
