@@ -11,15 +11,7 @@
 #include <string>
 #include <vector>
 #include "helpers.h"
-
-struct CarState {
-  double x;
-  double y;
-  double s; 
-  double d;
-  double yaw;
-  double speed;
-};
+#include "vehicle.h"
 
 struct Path {
   vector<double> x;
@@ -69,13 +61,13 @@ class PathPlanner {
   /**
    * Keep lane
    */
-  vector<vector<double>> keep_lane(const CarState & car_location, const Path & previous_path, vector<vector<double>> sensor_fusion);
+  vector<vector<double>> planner(const CarState & car_location, const Path & previous_path, vector<vector<double>> sensor_fusion);
   
   /**
    * In Frenet add X meters to car's current location
    */
-  vector<double> addXFrenet(double X){
-    return getXY(car_location.s + X, 2 + 4 * current_lane, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+  vector<double> addXFrenet(double s, double d){
+    return getXY(s, d, map.waypoints_s, map.waypoints_x, map.waypoints_y);
   }
 
   vector<double> predict_car_position(vector<double> vehicle, double time);
@@ -95,13 +87,9 @@ class PathPlanner {
    *   s(t) = a_0 + a_1 * t + a_2 * t**2 + a_3 * t**3 + a_4 * t**4 + a_5 * t**5
    */
   vector<double> JMT(vector<double> &start, vector<double> &end, double T);
-  
-  /**
-   * Provides the possible next states given the current state for the FSM 
-   * discussed in the course, with the exception that lane changes happen 
-   * instantaneously, so LCL and LCR can only transition back to KL.
-   */
-  vector<string> successor_states();
+
+  vector<Vehicle> generate_predictions(vector<vector<double>> sensor_fusion, int horizon);
+
 
   Map map;
  private:
@@ -112,10 +100,14 @@ class PathPlanner {
   double speed_limit;
   CarState car_location;
   int current_lane;
-  double ref_velocity;
+  
   double max_velocity_acceleration;
   double safety_distance;
-  string state; //state of the finite state machine
+
+  string FSMstate; //state of the finite state machine
+  int target_lane;
+  double target_speed;
+  double ref_velocity;
 };
 
 #endif  // PATH_PLANNER_H_

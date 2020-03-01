@@ -19,6 +19,8 @@
 #include "helpers.h"
 #include "spline.h"
 #include "Eigen-3.3/Eigen/Dense"
+#include "vehicle.h"
+
 
 using std::vector;
 using Eigen::MatrixXd;
@@ -37,65 +39,19 @@ void PathPlanner::init(size_t current_lane, const Map &map, size_t number_lanes,
     this->current_lane = current_lane;
     this->ref_velocity = 4;
     this->max_velocity_acceleration = 1.5 * 0.224; //about 10 m/s in velocity
+
     this->safety_distance = 30.0;
-    this->state = "KL";
+    this->FSMstate = "KL";
+    this->target_speed = 0;
+    this->target_lane = 1;
   }
 }
 
 void PathPlanner::set_location(const CarState & car_location){
   this->car_location = car_location;
 }
-vector<double> PathPlanner::predict_car_position(vector<double> vehicle, double time){
-  double x0 = vehicle[1];
-  double y0 = vehicle[2];
-  double vx = vehicle[3];
-  double vy = vehicle[4];
-  
-  
-  double xf = x0 + vx * time;
-  double yf = y0 + vy * time;
-  double theta = std::fmod(atan2(vy, vx), pi());
-  vector<double> sf_df = getFrenet(xf, yf, theta,this->map.waypoints_x, this->map.waypoints_y);
 
-  vector<double> prediction{xf, yf, sf_df[0], sf_df[1]};
-  return prediction;
-}
-
-int PathPlanner::proposed_new_lane(int current_lane, vector<vector<double>>  sensor_fusion){
-  int best_lane = current_lane;
-  double current_lane_speed = ref_velocity;
-  vector<bool> lane_occupied = {false, false, false};
-  lane_occupied[current_lane] = true;
-
-  for (size_t i = 0; i < sensor_fusion.size(); i++) {
-    
-    double vx = sensor_fusion[i][3];
-    double vy = sensor_fusion[i][4];
-    double s = sensor_fusion[i][5];
-    double d = sensor_fusion[i][6];
-    double check_speed = sqrt(vx * vx + vy * vy);
-    vector<double> xf_yf_sf_df_prediction = predict_car_position(sensor_fusion[i], 1);
-    int lane_number = get_lane_number(d, this->width_lane);
-
-    if (std::abs(lane_number - current_lane) == 1) {
-      lane_occupied[lane_number] = true;
-      //change only if road is clear
-      if (std::abs(xf_yf_sf_df_prediction[2] - car_location.s) > 30) {
-        //there enough space for change
-        best_lane = lane_number;
-      }
-    }
-  }
-  if (lane_occupied[0] == false)
-    return 0;
-  else if (lane_occupied[1] == false)
-    return 1;
-  else if (lane_occupied[2] == false)
-    return 2;
-  else 
-    return best_lane;
-}
-vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const Path & previous_path, vector<vector<double>>  sensor_fusion){
+vector<vector<double>> PathPlanner::planner(const CarState & location, const Path & previous_path, vector<vector<double>>  sensor_fusion){
   set_location(location);
 
   int prev_size = previous_path.x.size();
@@ -104,48 +60,14 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     car_location.s = previous_path.s;
   }
 
-  bool too_close = false;
-  double check_speed = 0;
-  double check_car_s = 0;
-  // find reference velocity to use
-  for (size_t i = 0; i < sensor_fusion.size(); i++) {
-    // car is in my lane
-    vector<double> xf_yf_sf_df_prediction = predict_car_position(sensor_fusion[i], 1);
-    double d = sensor_fusion[i][6];
-    double df = xf_yf_sf_df_prediction[3];
-    double vx = sensor_fusion[i][3];
-    double vy = sensor_fusion[i][4];
-    check_speed = sqrt(vx * vx + vy * vy);
-    check_car_s = sensor_fusion[i][5];
+  Vehicle ego_vehicle = Vehicle(0, target_lane, this->car_location, this->FSMstate);
+  vector<Vehicle> predictions = generate_predictions(sensor_fusion, prev_size);
+  ego_vehicle = ego_vehicle.choose_next_state(predictions);
 
-    if ((2 + 4*current_lane - 2) < d  && d < (2 + 4*current_lane + 2)) {
-      // if using previous points can project s  value out
-      check_car_s += ((double) prev_size * .02 * check_speed);
-
-      // check s values greater than mine and s gap
-      if (car_location.s < check_car_s && check_car_s < this->safety_distance + car_location.s) {
-        too_close = true;
-        break;
-      }
-    } else if ((2 + 4*current_lane - 2) < df  && df < (2 + 4*current_lane + 2)){
-        // car is changing to my lane
-        too_close = true;
-        break;
-    }
-  }
-
-  if (too_close) {
-      ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, mps2MPH(check_speed));
-    // do lane change
-    if (std::abs(ref_velocity - mps2MPH(check_speed)) < 1){
-      // consider changing lane
-      current_lane = proposed_new_lane(current_lane, sensor_fusion);
-      //current_lane = new_lane;
-    }
-  } else {
-    ref_velocity = std::min(ref_velocity + this->max_velocity_acceleration, speed_limit - 0.2);
-  }
-
+  this->target_speed = ego_vehicle.car_state.speed;
+  this->target_lane = ego_vehicle.lane;
+  this->FSMstate = ego_vehicle.FSM_state;
+  
   // create a list of widely spread (x,y) waypoints, evenly spaced at 30m
   vector<double> ptsx;
   vector<double> ptsy;
@@ -183,9 +105,9 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     
   }
   // In Frenet add  evenly 30m spaced points  ahead of the starting reference
-  vector<double> next_wp0 = addXFrenet(30.0);
-  vector<double> next_wp1 = addXFrenet(60.0);
-  vector<double> next_wp2 = addXFrenet(90.0);
+  vector<double> next_wp0 = addXFrenet(car_location.s + 30.0, getD(target_lane, width_lane));
+  vector<double> next_wp1 = addXFrenet(car_location.s + 60.0, getD(target_lane, width_lane));
+  vector<double> next_wp2 = addXFrenet(car_location.s + 90.0, getD(target_lane, width_lane));
 
   ptsx.push_back(next_wp0[0]);
   ptsy.push_back(next_wp0[1]);
@@ -219,6 +141,16 @@ vector<vector<double>> PathPlanner::keep_lane(const CarState & location, const P
     next_x_vals.push_back(previous_path.x[i]);
     next_y_vals.push_back(previous_path.y[i]);
   }
+
+
+  if (ref_velocity < target_speed)
+    ref_velocity += this->max_velocity_acceleration;
+  if (ref_velocity > target_speed)
+    ref_velocity -= this->max_velocity_acceleration;
+  if (ref_velocity > speed_limit)
+    ref_velocity = speed_limit;
+
+
 
   // Calculate how to break up  spline points so that we travel at the desired reference velocity
   double target_x = 30.0;
@@ -303,29 +235,32 @@ vector<double> PathPlanner::JMT(vector<double> &start, vector<double> &end, doub
   return {a0, a1, a2, a345[0], a345[1], a345[2]};
 }
 
-/**
-   * Provides the possible next states given the current state for the FSM 
-   * discussed in the course, with the exception that lane changes happen 
-   * instantaneously, so LCL and LCR can only transition back to KL.
-   */
-vector<string> PathPlanner::successor_states() {
-  vector<string> states;
-  states.push_back("KL");
-  string state = this->state;
-  if(state.compare("KL") == 0) {
-    states.push_back("PLCL");
-    states.push_back("PLCR");
-  } else if (state.compare("PLCL") == 0) {
-    if (current_lane != number_lanes - 1) {
-      states.push_back("PLCL");
-      states.push_back("LCL");
-    }
-  } else if (state.compare("PLCR") == 0) {
-    if (current_lane != 0) {
-      states.push_back("PLCR");
-      states.push_back("LCR");
-    }
+vector<Vehicle> PathPlanner::generate_predictions(vector<vector<double>> sensor_fusion, int horizon) {
+
+  vector<Vehicle> predictions;
+  for (int i = 0; i < sensor_fusion.size(); i++) {
+    double id = sensor_fusion[i][0];
+    double vx = sensor_fusion[i][3];
+    double vy = sensor_fusion[i][4];
+    double s  = sensor_fusion[i][5];
+    double d  = sensor_fusion[i][6];
+    double speed = sqrt(pow(vx,2) + pow(vy,2));
+
+    double pred_s = s + (double)horizon * 0.02 * speed;
+    vector<double> pred_xy = getXY(pred_s, d, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+    CarState car_state{};
+    car_state.s = pred_s;
+    car_state.d = d;
+    car_state.x = pred_xy[0];
+    car_state.y = pred_xy[1];
+    car_state.yaw = 0;
+    car_state.speed = speed;
+
+    predictions.push_back(Vehicle(id, getLane(d, this->width_lane), car_state, "KL"));
   }
-  // If state is "LCL" or "LCR", then just return "KL"
-  return states;
+
+  return predictions;
 }
+
+
+

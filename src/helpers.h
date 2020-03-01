@@ -9,6 +9,15 @@
 using std::string;
 using std::vector;
 
+struct CarState {
+  double x;
+  double y;
+  double s; 
+  double d;
+  double yaw;
+  double speed;
+};
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 //   else the empty string "" will be returned.
@@ -161,6 +170,14 @@ inline vector<double> getXY(double s, double d, const vector<double> &maps_s,
   double y = seg_y + d*sin(perp_heading);
 
   return {x,y};
+}
+
+inline double getD(int lane, double lane_width) {
+  return lane_width/2 + (double)lane*lane_width;
+}
+
+inline int getLane(double d,  double lane_width) {
+  return (int)round((d - lane_width/2)/lane_width);
 }
 
 #endif  // HELPERS_H

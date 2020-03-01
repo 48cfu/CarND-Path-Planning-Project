@@ -123,7 +123,7 @@ int main() {
             size_t number_of_lanes = 3;
             int current_lane = 2;
             double lane_width = 4; //[m]
-            double speed_limit = 50; // [mph]
+            double speed_limit = 49.5; // [mph]
             Map map;
             map.waypoints_x = map_waypoints_x;
             map.waypoints_y = map_waypoints_y;
@@ -136,7 +136,7 @@ int main() {
           }
 
           pp.set_location(car_location);
-          vector<vector<double>> next_xy = pp.keep_lane(car_location, previous_path, sensor_fusion);
+          vector<vector<double>> next_xy = pp.planner(car_location, previous_path, sensor_fusion);
           next_x_vals = next_xy[0];
           next_y_vals = next_xy[1];
           //std::cout << "size next_y_val = " << next_y_vals.size() << std::endl << std::flush;
