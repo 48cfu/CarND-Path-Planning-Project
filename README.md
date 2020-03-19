@@ -1,22 +1,30 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
    
-### Simulator.
-You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).  
-
-To run the simulator on Mac/Linux, first make the binary file executable with the following command:
-```shell
-sudo chmod u+x {simulator_file_name}
-```
-
 ### Goals
-In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
+In this project the goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. We are provided with the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car stays as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car avoids hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
+
+### Project description
+- From `./main.cpp` the path planning object from `Path_planner.cpp` is initialized. 
+- At each time instant, the method `PathPlanner::planner()` is called.
+- The method uses the spline library to generate the next points of the trajectory as explained in the project Q&A video.
+- In this same method `PathPlanner::planner()` I initialize a `Vehicle` object as the ego vehicle.
+- After refactoring of the behavior planning algorithm of lesson 9, I then call method `generate_predictions()` by passing as argument the sensor fusion data.
+- With the obtained predictions of the previous step, I can then obtain the next state of the ego vehicle by calling the vehicle method `choose_next_state()`.
+- I can then extract the speed, lane and state of the final state machine of the ego vehicle.
+- I then use these information in the subsequent code, as given in the Q&A video.
+- Take overs are done using cost functions, as described and implemented in lesson 9 (behavior planning).
 
 #### The map of the highway is in data/highway_map.txt
 Each waypoint in the list contains  [x,y,s,dx,dy] values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
 
 The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
 
+## Quick Build Instructions
+
+1. Clone this repo.
+2. Build and run it: `./run.sh`
+  
 ## Basic Build Instructions
 
 1. Clone this repo.
@@ -25,6 +33,14 @@ The highway's waypoints loop around so the frenet s value, distance along the ro
 4. Run it: `./path_planning`.
 
 Here is the data provided from the Simulator to the C++ Program
+
+### Simulator.
+You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).  
+
+To run the simulator on Mac/Linux, first make the binary file executable with the following command:
+```shell
+sudo chmod u+x {simulator_file_name}
+```
 
 #### Main car's localization Data (No Noise)
 

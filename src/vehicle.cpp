@@ -120,8 +120,10 @@ Vehicle Vehicle::lane_change_trajectory(string FSMstate, vector<Vehicle> predict
   for (int i = 0; i < predictions.size(); i++) {
     Vehicle pred = predictions[i];
 
-    if (next_lane == pred.lane) { //in the target lane
-      if (this->car_state.s < pred.car_state.s + 3 && this->car_state.s > pred.car_state.s - 33) { // Car blocking the lane
+    //in the target lane
+    if (next_lane == pred.lane) { 
+    // Car blocking the lane
+      if (this->car_state.s < pred.car_state.s + 3 && this->car_state.s > pred.car_state.s - 33) { 
         return this->keep_lane_trajectory(predictions);
       }
     }
