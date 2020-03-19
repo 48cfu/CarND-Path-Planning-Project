@@ -144,11 +144,10 @@ vector<vector<double>> PathPlanner::planner(const CarState & location, const Pat
 
 
   if (ref_velocity < target_speed)
-    ref_velocity += this->max_velocity_acceleration;
+    ref_velocity = std::min(ref_velocity + this->max_velocity_acceleration, target_speed);
   if (ref_velocity > target_speed)
-    ref_velocity -= this->max_velocity_acceleration;
-  if (ref_velocity > speed_limit)
-    ref_velocity = speed_limit;
+    ref_velocity = std::max(ref_velocity - this->max_velocity_acceleration, target_speed);
+  ref_velocity = std::min(ref_velocity, speed_limit);
 
 
 

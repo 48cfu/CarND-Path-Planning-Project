@@ -7,6 +7,7 @@
 #include "cost.h"
 #include "helpers.h"
 
+using namespace std;
 
 Vehicle::Vehicle(){}
 

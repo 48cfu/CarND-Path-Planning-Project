@@ -5,6 +5,7 @@
 #include <map>
 #include <math.h>
 
+using namespace std;
 
 const double EFFICIENCY = pow(10, 4);
 
