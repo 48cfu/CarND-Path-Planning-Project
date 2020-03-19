@@ -123,7 +123,7 @@ Vehicle Vehicle::lane_change_trajectory(string FSMstate, vector<Vehicle> predict
     //in the target lane
     if (next_lane == pred.lane) { 
     // Car blocking the lane
-      if (this->car_state.s < pred.car_state.s + 3 && this->car_state.s > pred.car_state.s - 33) { 
+      if (this->car_state.s < pred.car_state.s + 3 && this->car_state.s > pred.car_state.s - 34) { 
         return this->keep_lane_trajectory(predictions);
       }
     }
@@ -145,8 +145,8 @@ vector<double> Vehicle::get_kinematics(const Vehicle & vehicle, int lane, double
   vector<Vehicle> vehicle_ahead = get_vehicle_ahead(vehicle, lane, predictions);
   if (vehicle_ahead.size() > 0) {
     // slightly slower than the vehicle in front
-    if (vehicle_ahead[0].car_state.s - vehicle.car_state.s < distance_ahead) { // slow down
-      lane_speed = 0.95 * vehicle_ahead[0].car_state.speed; 
+    if (vehicle_ahead[0].car_state.s - vehicle.car_state.s < distance_ahead) { // keep speed of vehicle ahead
+      lane_speed = vehicle_ahead[0].car_state.speed; 
     }
   }
 
