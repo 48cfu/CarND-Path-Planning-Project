@@ -8,4 +8,4 @@ double calculate_cost(const Vehicle & vehicle, const Vehicle & trajectory, const
 
 double inefficiency_cost(const Vehicle & vehicle, const Vehicle & trajectory, const vector<Vehicle> & predictions);
 
-#endif
+#endif // COST_H

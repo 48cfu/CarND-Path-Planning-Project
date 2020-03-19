@@ -32,7 +32,7 @@ public:
   Vehicle lane_change_trajectory(string state, vector<Vehicle> predictions);
   vector<Vehicle> get_vehicle_ahead(const Vehicle & vehicle, int lane, vector<Vehicle> predictions) const;
   vector<Vehicle> get_vehicle_behind(const Vehicle & vehicle, int lane, vector<Vehicle> predictions) const;
-  vector<double> get_lane_kinematics(const Vehicle & vehicle, int lane, double distance_ahead, vector<Vehicle> predictions) const;
+  vector<double> get_kinematics(const Vehicle & vehicle, int lane, double distance_ahead, vector<Vehicle> predictions) const;
 
 };
 

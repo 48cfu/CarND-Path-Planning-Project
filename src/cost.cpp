@@ -27,9 +27,9 @@ double inefficiency_cost(const Vehicle & vehicle, const Vehicle & trajectory, co
     intended_lane = intended_lane + lane_direction[trajectory.FSM_state];
   }
 
-  // these are actually static members vehicle.get_lane_kinematics()
-  vector<double> intended_kinematics = vehicle.get_lane_kinematics(vehicle, intended_lane, 40.0, predictions);
-  vector<double> final_kinematics = vehicle.get_lane_kinematics(vehicle, final_lane, 40.0, predictions);
+  // these are actually static members vehicle.get_kinematics()
+  vector<double> intended_kinematics = vehicle.get_kinematics(vehicle, intended_lane, 40.0, predictions);
+  vector<double> final_kinematics = vehicle.get_kinematics(vehicle, final_lane, 40.0, predictions);
 
   double intended_speed = intended_kinematics[0];
   double final_speed = final_kinematics[0];

@@ -42,6 +42,7 @@ Vehicle Vehicle::choose_next_state(vector<Vehicle> predictions) {
 }
 
 vector<string> Vehicle::successor_states() {
+  
   vector<string> states;
   states.push_back("KL");
 
@@ -83,7 +84,7 @@ Vehicle Vehicle::generate_trajectory(string state, vector<Vehicle> predictions) 
 }
 
 Vehicle Vehicle::keep_lane_trajectory(vector<Vehicle> predictions) {
-  vector<double> lane_kinematics = get_lane_kinematics(*this, this->lane, 20.0, predictions);
+  vector<double> lane_kinematics = get_kinematics(*this, this->lane, 20.0, predictions);
   double speed = lane_kinematics[0];
   CarState car_state = this->car_state;
   car_state.speed = speed;
@@ -91,10 +92,11 @@ Vehicle Vehicle::keep_lane_trajectory(vector<Vehicle> predictions) {
 }
 
 Vehicle Vehicle::prep_lane_change_trajectory(string FSMstate, vector<Vehicle> predictions) {
+  
   int next_lane = this->lane + this->lane_direction[FSMstate];
 
-  vector<double> curr_lane_kinematics = get_lane_kinematics(*this, this->lane, 20.0, predictions);
-  vector<double> next_lane_kinematics = get_lane_kinematics(*this, next_lane, 20.0, predictions);
+  vector<double> curr_lane_kinematics = get_kinematics(*this, this->lane, 20.0, predictions);
+  vector<double> next_lane_kinematics = get_kinematics(*this, next_lane, 20.0, predictions);
 
   vector<double> best_kinematics;
   if (curr_lane_kinematics[0] < next_lane_kinematics[0]) {
@@ -111,6 +113,7 @@ Vehicle Vehicle::prep_lane_change_trajectory(string FSMstate, vector<Vehicle> pr
 }
 
 Vehicle Vehicle::lane_change_trajectory(string FSMstate, vector<Vehicle> predictions) {
+ 
   int next_lane = this->lane + this->lane_direction[FSMstate];
 
   for (int i = 0; i < predictions.size(); i++) {
@@ -123,7 +126,7 @@ Vehicle Vehicle::lane_change_trajectory(string FSMstate, vector<Vehicle> predict
     }
   }
 
-  vector<double> next_lane_kinematics = get_lane_kinematics(*this, next_lane, 20.0, predictions);
+  vector<double> next_lane_kinematics = get_kinematics(*this, next_lane, 20.0, predictions);
   double speed = next_lane_kinematics[0];
 
   CarState car_state = this->car_state;
@@ -132,13 +135,15 @@ Vehicle Vehicle::lane_change_trajectory(string FSMstate, vector<Vehicle> predict
   return Vehicle(this->id, next_lane, car_state, FSMstate);
 }
 
-vector<double> Vehicle::get_lane_kinematics(const Vehicle & vehicle, int lane, double distance_ahead, vector<Vehicle> predictions) const {
+vector<double> Vehicle::get_kinematics(const Vehicle & vehicle, int lane, double distance_ahead, vector<Vehicle> predictions) const {
+  
   double lane_speed = mps2MPH(this->speed_limit);
 
   vector<Vehicle> vehicle_ahead = get_vehicle_ahead(vehicle, lane, predictions);
   if (vehicle_ahead.size() > 0) {
+    // slightly slower than the vehicle in front
     if (vehicle_ahead[0].car_state.s - vehicle.car_state.s < distance_ahead) { // slow down
-      lane_speed = 0.95 * vehicle_ahead[0].car_state.speed; // slightly slower than vehicle ahead
+      lane_speed = 0.95 * vehicle_ahead[0].car_state.speed; 
     }
   }
 
@@ -146,12 +151,14 @@ vector<double> Vehicle::get_lane_kinematics(const Vehicle & vehicle, int lane, d
 }
 
 vector<Vehicle> Vehicle::get_vehicle_behind(const Vehicle & vehicle, int lane, vector<Vehicle> predictions) const {
+  
   vector<Vehicle> vehicle_behind;
 
   double min_dist = numeric_limits<double>::max();
   for (int i = 0; i < predictions.size(); i++) {
     Vehicle pred = predictions[i];
-    if (pred.lane == lane && vehicle.car_state.s > pred.car_state.s) { // same lane and behind
+    // same lane and behind
+    if (pred.lane == lane && vehicle.car_state.s > pred.car_state.s) { 
       double dist = vehicle.car_state.s - pred.car_state.s;
       if (dist < min_dist) {
         min_dist = dist;
@@ -164,12 +171,14 @@ vector<Vehicle> Vehicle::get_vehicle_behind(const Vehicle & vehicle, int lane, v
 }
 
 vector<Vehicle> Vehicle::get_vehicle_ahead(const Vehicle & vehicle, int lane, vector<Vehicle> predictions) const{
+  
   vector<Vehicle> vehicle_ahead;
 
   double min_dist = numeric_limits<double>::max();
   for (int i = 0; i < predictions.size(); i++) {
     Vehicle pred = predictions[i];
-    if (pred.lane == lane && vehicle.car_state.s < pred.car_state.s) { // same lane and ahead
+    // same lane and in front
+    if (pred.lane == lane && vehicle.car_state.s < pred.car_state.s) { 
       double dist = pred.car_state.s - vehicle.car_state.s;
       if (dist < min_dist) {
         min_dist = dist;
