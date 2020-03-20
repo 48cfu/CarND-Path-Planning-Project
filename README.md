@@ -1,18 +1,21 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
+
+![](./capture/previewbigbig.gif)
    
 ### Goals
 In this project the goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. We are provided with the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car stays as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car avoids hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
 
-### Project description
+### Project description & Reflections
+- The car is able to drive long distances wihout any accident. A run of more than 20 miles was achieved. However, the probability of accidents although low is not zero. This i s mainly due to the fact that some cars in traffic make harzadous manuevers, and how jerk minimal trajectories is not able to avoid them. I believe that in emergency situation violation of lateral and longitudinal jerk is necessary in order to avoid accidents.
 - From `./main.cpp` the path planning object from `Path_planner.cpp` is initialized. 
 - At each time instant, the method `PathPlanner::planner()` is called.
 - The method uses the spline library to generate the next points of the trajectory as explained in the project Q&A video.
 - In this same method `PathPlanner::planner()` I initialize a `Vehicle` object as the ego vehicle.
-- After refactoring of the behavior planning algorithm of lesson 9, I then call method `generate_predictions()` by passing as argument the sensor fusion data.
+- After refactoring of the behavior planning algorithm in lesson 9, I then call method `generate_predictions()` by passing as argument the sensor fusion data and what is left from the previously generated spline trajectory.
 - With the obtained predictions of the previous step, I can then obtain the next state of the ego vehicle by calling the vehicle method `choose_next_state()`.
-- I can then extract the speed, lane and state of the final state machine of the ego vehicle.
-- I then use these information in the subsequent code, as given in the Q&A video.
+- I then extract the speed, lane and state of the final state machine of the ego vehicle.
+- I then use these information in the subsequent code to generate the next trajectory points using the sppline library.
 - Take overs are done using cost functions, as described and implemented in lesson 9 (behavior planning).
 
 #### The map of the highway is in data/highway_map.txt

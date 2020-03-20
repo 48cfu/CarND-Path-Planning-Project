@@ -11,10 +11,7 @@ const double EFFICIENCY = pow(10, 4);
 
 
 double calculate_cost(const Vehicle & vehicle, const Vehicle & trajectory, const vector<Vehicle> & predictions) {
-  double cost = 0.0;
-
-  cost += inefficiency_cost(vehicle, trajectory, predictions);
-
+  double cost = inefficiency_cost(vehicle, trajectory, predictions);
   return cost;
 }
 
@@ -35,7 +32,7 @@ double inefficiency_cost(const Vehicle & vehicle, const Vehicle & trajectory, co
   double intended_speed = intended_kinematics[0];
   double final_speed = final_kinematics[0];
 
-  // Don't jump between lanes if it's just slightly faster.
+  // Don't go back and forth between lanes if it's just slightly faster.
   if (abs(intended_speed - final_speed) < 1.5) {
     final_speed = intended_speed;
   }
